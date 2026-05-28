@@ -33,7 +33,6 @@ nav .btn{background:transparent;border:2px solid rgba(255,255,255,0.16);color:#f
 nav .btn:hover{background:#fff;color:var(--primary);border-color:#fff}
 
 /* ESTILIZAÇÃO DAS SEÇÕES (CARDS) */
-.section-placeholder{}
 
 section{background:var(--card);padding:28px;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:var(--gap)}
 

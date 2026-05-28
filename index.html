@@ -19,8 +19,11 @@
     <main class="container">
         
         <section id="secao-cadastro">
-            <h2>Agendar Nova Consulta</h2>
+            <h2 id="titulo-form">Agendar Nova Consulta</h2>
             <form id="form-cadastro">
+                
+                <input type="hidden" id="consulta-id" name="id" value="">
+
                 <div class="campo">
                     <label for="paciente">Nome do Paciente:</label>
                     <input type="text" id="paciente" name="paciente" required placeholder="Ex: Carlos Silva">
@@ -52,22 +55,12 @@
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody id="corpo-tabela">
-                    <tr>
-                        <td>1</td>
-                        <td>Ana Maria Oliveira</td>
-                        <td>Dra. Beatriz - Pediatria</td>
-                        <td>30/05/2026 14:00</td>
-                        <td>
-                            <button class="btn-editar">Editar</button>
-                            <button class="btn-excluir">Cancelar</button>
-                        </td>
-                    </tr>
-                </tbody>
+                <tbody id="corpo-tabela"></tbody>
             </table>
         </section>
 
     </main>
+
     <script src="js/script.js"></script>
 </body>
 </html>

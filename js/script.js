@@ -1,131 +1,143 @@
-//Criando variáveis para acessar elementos do DOM//
-let btnMenuCadastro = document.getElementById('btn-menu-cadastro');
-let btnMenuListar = document.getElementById('btn-menu-listagem');
-let secaoCadastro = document.getElementById('secao-cadastro');
-let secaoListagem = document.getElementById('secao-listagem');
-let formCadastro = document.getElementById('form-cadastro');
-let corpoTabela = document.getElementById('corpo-tabela');
+/**
+ * Arquivo: js/script.js
+ * Função: Gerenciar as interações da interface, requisições Fetch API (CRUD)
+ * e manipulação do DOM sem o uso de atributos 'onclick' no HTML.
+ */
 
-//Função para quando clicar nos botões do menu//
+// Seleção de elementos do DOM
+const btnMenuCadastro = document.getElementById('btn-menu-cadastro');
+const btnMenuListar = document.getElementById('btn-menu-listagem');
+const secaoCadastro = document.getElementById('secao-cadastro');
+const secaoListagem = document.getElementById('secao-listagem');
+const formCadastro = document.getElementById('form-cadastro');
+const corpoTabela = document.getElementById('corpo-tabela');
+const inputId = document.getElementById('consulta-id'); // Campo oculto para edição
+const tituloForm = document.getElementById('titulo-form'); // AJUSTE: Captura o elemento do título do formulário
+
+// Controle de navegação das seções
 btnMenuCadastro.addEventListener('click', () => {
-    secaoCadastro.style.display = 'block'; //Exibir seção cadastro//
-    secaoListagem.style.display = 'none'; //Bloquear seção listagem//
+    secaoCadastro.style.display = 'block';
+    secaoListagem.style.display = 'none';
+    formCadastro.reset();
+    inputId.value = ''; // Garante que o formulário está em modo de "cadastro"
+    tituloForm.innerText = 'Agendar Nova Consulta'; // AJUSTE: Reseta o título para modo de agendamento novo
 });
 
 btnMenuListar.addEventListener('click', () => {
-    secaoCadastro.style.display = 'none'; //Bloquear seção cadastro//
-    secaoListagem.style.display = 'block'; //Exibir seção listagem//
-    atualizarTabela(); //Chama a função para exibir a lista atualizada ao mudar de tela
+    secaoCadastro.style.display = 'none';
+    secaoListagem.style.display = 'block';
+    atualizarTabela();
 });
 
-//Função pro usuário enviar o formulário de cadastro (Conectada ao Banco de Dados)//
+// Envio do Formulário (Salvar Novo ou Atualizar Existente)
 formCadastro.addEventListener('submit', (event) => {
-    //Impede a página de recarregar ao enviar o formulário//
     event.preventDefault();
 
-    //Captura os valores dos inputs HTML//
-    let nomePaciente = document.getElementById('paciente').value;
-    let nomeMedico = document.getElementById('medico').value;
-    let dataHora = document.getElementById('data_hora').value;
+    const dadosFormulario = new FormData(formCadastro);
+    
+    // Define se a ação será atualizar (caso haja ID no campo oculto) ou salvar (novo registro)
+    const acao = inputId.value ? 'atualizar' : 'salvar';
 
-    // Criamos um formato de dados que o PHP consegue entender nativamente (FormData)
-    let dadosFormulario = new FormData();
-    dadosFormulario.append('paciente', nomePaciente);
-    dadosFormulario.append('medico', nomeMedico);
-    dadosFormulario.append('data_hora', dataHora);
-
-    // Envia os dados para o arquivo PHP usando o Fetch API
-    fetch('salvar_consulta.php', {
+    fetch(`index.php?acao=${acao}`, {
         method: 'POST',
         body: dadosFormulario
     })
-    .then(resposta => resposta.json()) // Converte a resposta do PHP para JSON
-    .then(dados => {
-        if (dados.sucesso) {
-            // Se o PHP salvou com sucesso no MySQL:
-            alert('Consulta cadastrada com sucesso no Banco de Dados!');
-            formCadastro.reset(); // Limpa o formulário
-        } else {
-            // Se o PHP retornou algum erro do banco:
-            alert('Erro ao salvar no banco: ' + dados.erro);
-        }
-    })
-    .catch(erro => {
-        // Se houver algum erro de rede ou o arquivo PHP não for encontrado:
-        console.error('Erro na requisição:', erro);
-        alert('Erro ao tentar se comunicar com o servidor.');
-    });
-});
-
-//Função para atualizar a lista de consultas (Buscando do Banco de Dados)//
-let atualizarTabela = () => {
-    // Faz a requisição para o arquivo PHP que lê o banco
-    fetch('listar_consultas.php')
     .then(resposta => resposta.json())
     .then(dados => {
-        // Limpar o corpo da tabela antes de desenhar as novas linhas
+        if (dados.sucesso) {
+            alert(acao === 'salvar' ? 'Consulta cadastrada com sucesso!' : 'Consulta atualizada com sucesso!');
+            formCadastro.reset();
+            inputId.value = '';
+            tituloForm.innerText = 'Agendar Nova Consulta'; // AJUSTE: Reseta o título após salvar
+            btnMenuListar.click(); // Redireciona visualmente para a listagem
+        } else {
+            alert('Erro no processo: ' + dados.erro);
+        }
+    })
+    .catch(erro => console.error('Erro na requisição:', erro));
+});
+
+// Buscar dados do banco e renderizar a tabela
+const atualizarTabela = () => {
+    fetch('index.php?acao=listar')
+    .then(resposta => resposta.json())
+    .then(dados => {
         corpoTabela.innerHTML = '';
 
-        // Se o PHP retornar um erro do banco, avisa o usuário
         if (dados.erro) {
             alert('Erro ao carregar consultas: ' + dados.erro);
             return;
         }
 
-        // Loop para correr os dados vindos do MySQL
         dados.forEach((consulta) => {
-            let linha = document.createElement('tr');
-
-            // Formata a data para ficar amigável na exibição (Ex: 30/06/2026 16:00)
-            let dataFormatada = new Date(consulta.data).toLocaleString('pt-BR', {
+            const linha = document.createElement('tr');
+            
+            const dataFormatada = new Date(consulta.data).toLocaleString('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'short'
             });
 
-            // Preenchendo a linha com os dados reais do banco
+            // Cria a estrutura interna da linha sem usar 'onclick' nas tags do botão
             linha.innerHTML = `
                 <td>${consulta.id}</td>
                 <td>${consulta.paciente}</td>
                 <td>${consulta.medico}</td>
                 <td>${dataFormatada}</td>
                 <td>
-                    <button class="btn-excluir" onclick="cancelarConsulta(${consulta.id})">Cancelar</button>
+                    <button class="btn-editar" data-id="${consulta.id}">Editar</button>
+                    <button class="btn-excluir" data-id="${consulta.id}">Cancelar</button>
                 </td>
             `;
-            
             corpoTabela.appendChild(linha);
         });
     })
-    .catch(erro => {
-        console.error('Erro ao listar consultas:', erro);
-    });
+    .catch(erro => console.error('Erro ao listar consultas:', erro));
 };
 
-//Função para remover uma consulta do banco pelo ID (Deletar Real)//
-let cancelarConsulta = (idParaDeletar) => {
-    if (confirm('Tem certeza que deseja cancelar esta consulta?')) {
-        
-        // Prepara o ID para enviar ao PHP
-        let dados = new FormData();
-        dados.append('id', idParaDeletar);
-
-        // Faz o fetch para o arquivo de cancelamento
-        fetch('cancelar_consulta.php', {
-            method: 'POST',
-            body: dados
-        })
+// Escutador de Eventos centralizado na Tabela (Delegação de Eventos para evitar o onclick proibido)
+corpoTabela.addEventListener('click', (event) => {
+    const id = event.target.getAttribute('data-id');
+    
+    // Ação do Botão Editar
+    if (event.target.classList.contains('btn-editar')) {
+        fetch(`index.php?acao=editar&id=${id}`)
         .then(resposta => resposta.json())
         .then(resultado => {
             if (resultado.sucesso) {
-                alert('Consulta cancelada com sucesso!');
-                atualizarTabela(); // Atualiza a tabela na tela para sumir com a linha deletada
+                // Preenche o formulário com os dados vindos do banco
+                inputId.value = resultado.dados.id;
+                document.getElementById('paciente').value = resultado.dados.paciente;
+                document.getElementById('medico').value = resultado.dados.medico;
+                
+                // Formata a data para o padrão exigido pelo input datetime-local (YYYY-MM-DDTHH:MM)
+                const dataOriginal = resultado.dados.data.replace(' ', 'T').substring(0, 16);
+                document.getElementById('data_hora').value = dataOriginal;
+
+                // AJUSTE: Altera dinamicamente o título visual do formulário para edição
+                tituloForm.innerText = 'Editar Consulta';
+
+                // Muda para a seção de formulário para o usuário editar
+                secaoCadastro.style.display = 'block';
+                secaoListagem.style.display = 'none';
             } else {
-                alert('Erro ao cancelar no banco: ' + resultado.erro);
+                alert('Erro ao buscar dados: ' + resultado.erro);
             }
-        })
-        .catch(erro => {
-            console.error('Erro na requisição de cancelamento:', erro);
-            alert('Erro ao tentar se comunicar com o servidor.');
         });
     }
-};
+
+    // Ação do Botão Cancelar (Excluir)
+    if (event.target.classList.contains('btn-excluir')) {
+        if (confirm('Tem certeza que deseja cancelar esta consulta?')) {
+            fetch(`index.php?acao=excluir&id=${id}`)
+            .then(resposta => resposta.json())
+            .then(resultado => {
+                if (resultado.sucesso) {
+                    alert('Consulta cancelada com sucesso!');
+                    atualizarTabela();
+                } else {
+                    alert('Erro ao excluir: ' + resultado.erro);
+                }
+            });
+        }
+    }
+});

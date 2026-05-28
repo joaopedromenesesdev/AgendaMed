@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgendaMed - Sistema de Consultas</title>
+    <link rel="stylesheet" href="CSS/style.css">
+</head>
+<body>
+
+    <header>
+        <h1>AgendaMed</h1>
+        <nav>
+            <button id="btn-menu-cadastro">Agendar Consulta</button>
+            <button id="btn-menu-listagem">Consultas Agendadas</button>
+        </nav>
+    </header>
+
+    <main class="container">
+        
+        <section id="secao-cadastro">
+            <h2>Agendar Nova Consulta</h2>
+            <form id="form-cadastro">
+                <div class="campo">
+                    <label for="paciente">Nome do Paciente:</label>
+                    <input type="text" id="paciente" name="paciente" required placeholder="Ex: Carlos Silva">
+                </div>
+
+                <div class="campo">
+                    <label for="medico">Médico / Especialidade:</label>
+                    <input type="text" id="medico" name="medico" required placeholder="Ex: Dr. Roberto - Cardiologia">
+                </div>
+
+                <div class="campo">
+                    <label for="data_hora">Data e Horário:</label>
+                    <input type="datetime-local" id="data_hora" name="data_hora" required>
+                </div>
+
+                <button type="submit" class="btn-sucesso">Confirmar Agendamento</button>
+            </form>
+        </section>
+
+        <section id="secao-listagem" style="display: none;">
+            <h2>Consultas Agendadas</h2>
+            <table class="tabela-consultas">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Paciente</th>
+                        <th>Médico</th>
+                        <th>Data / Hora</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela">
+                    <tr>
+                        <td>1</td>
+                        <td>Ana Maria Oliveira</td>
+                        <td>Dra. Beatriz - Pediatria</td>
+                        <td>30/05/2026 14:00</td>
+                        <td>
+                            <button class="btn-editar">Editar</button>
+                            <button class="btn-excluir">Cancelar</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+    <script src="js/script.js"></script>
+</body>
+</html>

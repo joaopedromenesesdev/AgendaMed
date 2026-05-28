@@ -1,43 +1,44 @@
 /**
- * Arquivo: js/script.js
- * Função: Gerenciar as interações da interface, requisições Fetch API (CRUD)
- * e manipulação do DOM sem o uso de atributos 'onclick' no HTML.
+ * ARQUIVO: js/main.js
+ * OBJETIVO: Controlar as transições da interface visual e realizar requisições assíncronas Fetch API
  */
 
-// Seleção de elementos do DOM
+// Seleção e mapeamento de elementos do DOM
 const btnMenuCadastro = document.getElementById('btn-menu-cadastro');
-const btnMenuListar = document.getElementById('btn-menu-listagem');
-const secaoCadastro = document.getElementById('secao-cadastro');
-const secaoListagem = document.getElementById('secao-listagem');
-const formCadastro = document.getElementById('form-cadastro');
-const corpoTabela = document.getElementById('corpo-tabela');
-const inputId = document.getElementById('consulta-id'); // Campo oculto para edição
-const tituloForm = document.getElementById('titulo-form'); // AJUSTE: Captura o elemento do título do formulário
+const btnMenuListar   = document.getElementById('btn-menu-listagem');
+const secaoCadastro   = document.getElementById('secao-cadastro');
+const secaoListagem   = document.getElementById('secao-listagem');
+const formCadastro    = document.getElementById('form-cadastro');
+const corpoTabela     = document.getElementById('corpo-tabela');
+const inputId         = document.getElementById('consulta-id'); 
+const tituloForm      = document.getElementById('titulo-form'); 
 
-// Controle de navegação das seções
+// Registra os eventos utilizando obrigatoriamente addEventListener, sem onclick direto no HTML
 btnMenuCadastro.addEventListener('click', () => {
     secaoCadastro.style.display = 'block';
     secaoListagem.style.display = 'none';
-    formCadastro.reset();
-    inputId.value = ''; // Garante que o formulário está em modo de "cadastro"
-    tituloForm.innerText = 'Agendar Nova Consulta'; // AJUSTE: Reseta o título para modo de agendamento novo
+    formCadastro.reset(); // Limpa dados residuais dos campos
+    inputId.value = '';   // Define o estado do formulário como inserção (ID vazio)
+    tituloForm.innerText = 'Agendar Nova Consulta'; 
 });
 
 btnMenuListar.addEventListener('click', () => {
     secaoCadastro.style.display = 'none';
     secaoListagem.style.display = 'block';
-    atualizarTabela();
+    atualizarTabela(); // Aciona a busca de dados em tempo real no banco
 });
 
-// Envio do Formulário (Salvar Novo ou Atualizar Existente)
+// Evento disparado no envio do formulário (Submissão)
 formCadastro.addEventListener('submit', (event) => {
-    event.preventDefault();
+    event.preventDefault(); // Impede o recarregamento nativo da página HTML
 
+    // Consolida e empacota todos os dados do formulário nativamente utilizando FormData
     const dadosFormulario = new FormData(formCadastro);
     
-    // Define se a ação será atualizar (caso haja ID no campo oculto) ou salvar (novo registro)
+    // Define dinamicamente o parâmetro da rota baseado na existência de um ID no campo oculto
     const acao = inputId.value ? 'atualizar' : 'salvar';
 
+    // Dispara a requisição assíncrona POST enviando o corpo das informações coletadas
     fetch(`index.php?acao=${acao}`, {
         method: 'POST',
         body: dadosFormulario
@@ -48,36 +49,38 @@ formCadastro.addEventListener('submit', (event) => {
             alert(acao === 'salvar' ? 'Consulta cadastrada com sucesso!' : 'Consulta atualizada com sucesso!');
             formCadastro.reset();
             inputId.value = '';
-            tituloForm.innerText = 'Agendar Nova Consulta'; // AJUSTE: Reseta o título após salvar
-            btnMenuListar.click(); // Redireciona visualmente para a listagem
+            tituloForm.innerText = 'Agendar Nova Consulta';
+            btnMenuListar.click(); // Força a navegação visual automática até a tabela
         } else {
-            alert('Erro no processo: ' + dados.erro);
+            alert('Erro operacional: ' + dados.erro);
         }
     })
-    .catch(erro => console.error('Erro na requisição:', erro));
+    .catch(erro => console.error('Falha na comunicação de rede:', erro));
 });
 
-// Buscar dados do banco e renderizar a tabela
+// Busca os registros de forma dinâmica no banco para renderização em tela
 const atualizarTabela = () => {
     fetch('index.php?acao=listar')
     .then(resposta => resposta.json())
     .then(dados => {
-        corpoTabela.innerHTML = '';
+        corpoTabela.innerHTML = ''; // Limpa os dados contidos na tabela antes do preenchimento
 
         if (dados.erro) {
-            alert('Erro ao carregar consultas: ' + dados.erro);
+            alert('Falha interna ao carregar: ' + dados.erro);
             return;
         }
 
+        // Percorre a lista de registros recebidos por meio de um laço forEach
         dados.forEach((consulta) => {
             const linha = document.createElement('tr');
             
-            const dataFormatada = new Date(consulta.data).toLocaleString('pt-BR', {
+            // Realiza a formatação localizada da data e hora vindas do banco
+            const dataFormatada = new Date(consulta.data_hora).toLocaleString('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'short'
             });
 
-            // Cria a estrutura interna da linha sem usar 'onclick' nas tags do botão
+            // Estrutura a linha do HTML injetando atributos de identificação do elemento clicado
             linha.innerHTML = `
                 <td>${consulta.id}</td>
                 <td>${consulta.paciente}</td>
@@ -91,51 +94,50 @@ const atualizarTabela = () => {
             corpoTabela.appendChild(linha);
         });
     })
-    .catch(erro => console.error('Erro ao listar consultas:', erro));
+    .catch(erro => console.error('Erro na requisição Fetch:', erro));
 };
 
-// Escutador de Eventos centralizado na Tabela (Delegação de Eventos para evitar o onclick proibido)
+// Implementação de Delegação de Eventos no elemento pai para gerenciamento seguro dos cliques dos botões
 corpoTabela.addEventListener('click', (event) => {
     const id = event.target.getAttribute('data-id');
     
-    // Ação do Botão Editar
+    // Intercepta e gerencia o clique no botão de edição
     if (event.target.classList.contains('btn-editar')) {
         fetch(`index.php?acao=editar&id=${id}`)
         .then(resposta => resposta.json())
         .then(resultado => {
             if (resultado.sucesso) {
-                // Preenche o formulário com os dados vindos do banco
+                // Alimenta os inputs do formulário com os respectivos dados encontrados
                 inputId.value = resultado.dados.id;
                 document.getElementById('paciente').value = resultado.dados.paciente;
                 document.getElementById('medico').value = resultado.dados.medico;
                 
-                // Formata a data para o padrão exigido pelo input datetime-local (YYYY-MM-DDTHH:MM)
-                const dataOriginal = resultado.dados.data.replace(' ', 'T').substring(0, 16);
+                // Converte a formatação da string para aceitação do input nativo datetime-local
+                const dataOriginal = resultado.dados.data_hora.replace(' ', 'T').substring(0, 16);
                 document.getElementById('data_hora').value = dataOriginal;
 
-                // AJUSTE: Altera dinamicamente o título visual do formulário para edição
-                tituloForm.innerText = 'Editar Consulta';
+                tituloForm.innerText = 'Editar Consulta'; // Altera o contexto textual visualmente
 
-                // Muda para a seção de formulário para o usuário editar
+                // Transiciona a tela para exibição imediata do formulário carregado
                 secaoCadastro.style.display = 'block';
                 secaoListagem.style.display = 'none';
             } else {
-                alert('Erro ao buscar dados: ' + resultado.erro);
+                alert('Erro ao resgatar informações: ' + resultado.erro);
             }
         });
     }
 
-    // Ação do Botão Cancelar (Excluir)
+    // Intercepta e gerencia o clique no botão de exclusão
     if (event.target.classList.contains('btn-excluir')) {
-        if (confirm('Tem certeza que deseja cancelar esta consulta?')) {
+        if (confirm('Deseja realmente remover esta consulta do sistema?')) {
             fetch(`index.php?acao=excluir&id=${id}`)
             .then(resposta => resposta.json())
             .then(resultado => {
                 if (resultado.sucesso) {
-                    alert('Consulta cancelada com sucesso!');
-                    atualizarTabela();
+                    alert('Consulta removida com sucesso do sistema.');
+                    atualizarTabela(); // Atualiza a visualização da listagem de dados em tela
                 } else {
-                    alert('Erro ao excluir: ' + resultado.erro);
+                    alert('Erro na remoção do item: ' + resultado.erro);
                 }
             });
         }

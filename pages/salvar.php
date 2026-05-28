@@ -1,41 +1,39 @@
 <?php
-// 1. Inclui o arquivo de conexão com o banco
-require_once 'config/conexao.php';
+/**
+ * ARQUIVO: pages/salvar.php
+ * OBJETIVO: Validar e sanitizar a requisição via POST e gravar um novo agendamento
+ */
 
-// 2. Verifica se os dados foram enviados via método POST
+// Verifica se a requisição atual é do tipo POST para garantir conformidade
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
-    // 3. Captura os dados enviados pelo formulário
-    $paciente = $_POST['paciente'] ?? '';
-    $medico = $_POST['medico'] ?? '';
-    $data_hora = $_POST['data_hora'] ?? '';
+    // Captura os dados aplicando trim() para remover espaços e htmlspecialchars() contra XSS
+    $paciente  = isset($_POST['paciente'])  ? htmlspecialchars(trim($_POST['paciente']))  : '';
+    $medico    = isset($_POST['medico'])    ? htmlspecialchars(trim($_POST['medico']))    : '';
+    $data_hora = isset($_POST['data_hora']) ? htmlspecialchars(trim($_POST['data_hora'])) : '';
 
-    // Validação simples: garante que nenhum campo veio vazio
+    // Verifica se todos os campos obrigatórios foram devidamente preenchidos
     if (!empty($paciente) && !empty($medico) && !empty($data_hora)) {
-        try {
-            // 4. Prepara o comando SQL (usando Prepared Statements contra invasões)
-            $sql = "INSERT INTO consultas (paciente, medico, data_hora) VALUES (:paciente, :medico, :data_hora)";
-            $stmt = $conexao->prepare($sql);
-            
-            // 5. Substitui os parâmetros pelos valores reais
-            $stmt->bindValue(':paciente', $paciente);
-            $stmt->bindValue(':medico', $medico);
-            $stmt->bindValue(':data_hora', $data_hora);
-            
-            // 6. Executa a gravação no banco de dados
-            $stmt->execute();
-            
-            // Retorna uma resposta de sucesso para o JavaScript saber que deu certo
-            echo json_encode(['sucesso' => true]);
+        
+        // Escape dos dados de string com mysqli_real_escape_string contra injeções SQL indesejadas
+        $pacienteClean  = mysqli_real_escape_string($conexao, $paciente);
+        $medicoClean    = mysqli_real_escape_string($conexao, $medico);
+        $data_horaClean = mysqli_real_escape_string($conexao, $data_hora);
+
+        // Constrói a consulta SQL estruturada para inserção
+        $sql = "INSERT INTO consultas (paciente, medico, data_hora) VALUES ('$pacienteClean', '$medicoClean', '$data_horaClean')";
+
+        // Executa a consulta no banco de dados
+        if (mysqli_query($conexao, $sql)) {
+            echo json_encode(["sucesso" => true]);
             exit;
-            
-        } catch (PDOException $erro) {
-            echo json_encode(['sucesso' => false, 'erro' => $erro->getMessage()]);
+        } else {
+            echo json_encode(["sucesso" => false, "erro" => "Falha na inserção: " . mysqli_error($conexao)]);
             exit;
         }
+    } else {
+        echo json_encode(["sucesso" => false, "erro" => "Preencha todos os campos obrigatórios."]);
+        exit;
     }
 }
-
-// Se tentarem acessar esse arquivo direto ou com dados incompletos
-echo json_encode(['sucesso' => false, 'erro' => 'Dados inválidos']);
 ?>

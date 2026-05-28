@@ -1,20 +1,28 @@
 <?php
-// 1. Inclui a conexão com o banco
-require_once 'config/conexao.php';
+/**
+ * ARQUIVO: pages/listar.php
+ * OBJETIVO: Executar o SELECT e carregar os registros através de uma estrutura de repetição
+ */
 
-try {
-    // 2. Faz a busca de todas as consultas ordenadas por data
-    $sql = "SELECT id, paciente, medico, DATE_FORMAT(data_hora, '%Y-%m-%dT%H:%i') as data FROM consultas ORDER BY data_hora ASC";
-    $stmt = $conexao->prepare($sql);
-    $stmt->execute();
-    
-    // 3. Transforma o resultado em um array associativo do PHP
-    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // 4. Devolve o array para o JavaScript em formato JSON
-    echo json_encode($resultados);
-    
-} catch (PDOException $erro) {
-    echo json_encode(['erro' => $erro->getMessage()]);
+// Define a consulta SQL ordenando os agendamentos pela proximidade cronológica
+$sql = "SELECT id, paciente, medico, data_hora FROM consultas ORDER BY data_hora ASC";
+
+// Executa a instrução SQL no banco conectado
+$resultado = mysqli_query($conexao, $sql);
+
+if ($resultado) {
+    $listaConsultas = [];
+
+    // Laço de repetição condicional utilizando a função nativa obrigatória mysqli_fetch_assoc
+    while ($linha = mysqli_fetch_assoc($resultado)) {
+        $listaConsultas[] = $linha; // Alimenta a coleção com cada linha lida do banco
+    }
+
+    // Retorna a coleção contendo todos os agendamentos cadastrados em formato JSON para o JavaScript
+    echo json_encode($listaConsultas);
+    exit;
+} else {
+    echo json_encode(["erro" => "Falha ao ler dados: " . mysqli_error($conexao)]);
+    exit;
 }
 ?>

@@ -1,19 +1,20 @@
 <?php
-// Configurações de credenciais do banco de dados local (XAMPP)
-$host = "localhost";
-$banco = "agendamed";
-$usuario = "root";
-$senha = ""; // No XAMPP por padrão a senha do root é vazia
+// Arquivo: config/conexao.php
+// Responsabilidade: Criar a conexão nativa com o MySQL usando mysqli_connect()
 
-try {
-    // Tentativa de conexão utilizando o PDO
-    $conexao = new PDO("mysql:host=$host;dbname=$banco;charset=utf8", $usuario, $senha);
-    
-    // Configura o PDO para disparar exceções (erros) caso algo dê errado nas queries
-    $conexao->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-} catch (PDOException $erro) {
-    // Se a conexão falhar, exibe uma mensagem clara e interrompe a execução
-    die("Erro ao tentar conectar com o banco de dados: " . $erro->getMessage());
+$host = "localhost";
+$usuario = "root";
+$senha = "";
+$banco = "agendamed";
+
+// Conexão utilizando a função exigida pelo critério da AV2
+$conexao = mysqli_connect($host, $usuario, $senha, $banco);
+
+// Verifica se houve falha na conexão e interrompe o script exibindo o erro
+if (!$conexao) {
+    die("Falha na conexão com o banco de dados: " . mysqli_connect_error());
 }
+
+// Configura o charset para UTF-8 para evitar problemas com acentos e caracteres especiais
+mysqli_set_charset($conexao, "utf8");
 ?>
